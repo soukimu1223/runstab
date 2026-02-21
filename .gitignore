@@ -1,0 +1,17 @@
+# 動画・画像ファイル（容量が大きいためGit管理外）
+*.mov
+*.mp4
+*.jpg
+*.jpeg
+*.png
+
+# デバッグ出力
+prototype/debug/
+prototype/*_frames/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
