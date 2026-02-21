@@ -2,21 +2,38 @@
 //  ContentView.swift
 //  RunStab
 //
-//  Created by 木村蒼季 on 2026/02/21.
-//
+//  アプリのナビゲーション起点。
+//  動画選択 → 追跡設定 → 処理 → 結果 のフローを管理する。
 
 import SwiftUI
 
 struct ContentView: View {
+    @State private var step: AppStep = .pickVideo
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        NavigationStack {
+            switch step {
+            case .pickVideo:
+                VideoPickerView(step: $step)
+
+            case .setupTracking(let url):
+                TrackingSetupView(videoURL: url, step: $step)
+
+            case .processing(let url, let traj):
+                ProcessingView(sourceURL: url, trajectory: traj, step: $step)
+
+            case .result(let url):
+                ResultView(outputURL: url, step: $step)
+            }
         }
-        .padding()
     }
+}
+
+enum AppStep {
+    case pickVideo
+    case setupTracking(URL)
+    case processing(URL, Trajectory)
+    case result(URL)
 }
 
 #Preview {
