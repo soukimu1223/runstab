@@ -45,21 +45,25 @@ struct TrajectoryTests {
         #expect(abs(t.x(at: 30) - expected) < 0.001)
     }
 
-    // MARK: - Y座標の補間
+    // MARK: - Y座標（始点・終点の中央値で固定）
 
-    @Test func yInterpolatesLikeX() {
+    @Test func yFixedAtMidpoint() {
         let t = Trajectory(startFrame: 0, startX: 0, startY: 200,
-                           endFrame: 100, endX: 0, endY: 400)
-        #expect(t.y(at: 0) == 200)
+                           endFrame: 100, endX: 0, endY: 400,
+                           sourceVideoHeight: 1080)
+        // どのフレームでも (200+400)/2 = 300 を返す
+        #expect(t.y(at: 0) == 300)
         #expect(t.y(at: 50) == 300)
-        #expect(t.y(at: 100) == 400)
+        #expect(t.y(at: 100) == 300)
     }
 
-    @Test func yClampsBeyondRange() {
+    @Test func yAlwaysMidpointBeyondRange() {
         let t = Trajectory(startFrame: 10, startX: 0, startY: 800,
-                           endFrame: 50, endX: 0, endY: 900)
-        #expect(t.y(at: 0) == 800)
-        #expect(t.y(at: 99) == 900)
+                           endFrame: 50, endX: 0, endY: 900,
+                           sourceVideoHeight: 1080)
+        let mid = (800.0 + 900.0) / 2
+        #expect(t.y(at: 0) == mid)
+        #expect(t.y(at: 99) == mid)
     }
 
     // MARK: - cropSize
@@ -67,8 +71,8 @@ struct TrajectoryTests {
     @Test func cropWidthIs9to16AspectRatio() {
         let t = Trajectory(startFrame: 0, startX: 500, startY: 800,
                            endFrame: 60, endX: 100, endY: 800,
-                           runnerHeightPx: 400)
-        let expectedH = 400.0 * 1.5
+                           sourceVideoHeight: 1080)
+        let expectedH = 1080.0 * 0.35
         let expectedW = expectedH * 9.0 / 16.0
         #expect(abs(t.cropSize.height - expectedH) < 0.001)
         #expect(abs(t.cropSize.width - expectedW) < 0.001)
@@ -79,6 +83,7 @@ struct TrajectoryTests {
     private func makeTrajectory(startFrame: Int, startX: Double,
                                  endFrame: Int, endX: Double) -> Trajectory {
         Trajectory(startFrame: startFrame, startX: startX, startY: 800,
-                   endFrame: endFrame, endX: endX, endY: 800)
+                   endFrame: endFrame, endX: endX, endY: 800,
+                   sourceVideoHeight: 1080)
     }
 }

@@ -13,6 +13,7 @@ actor FrameExtractor {
     private let generator: AVAssetImageGenerator
     private let fps: Double
     private let totalFrames: Int
+    private let _videoSize: CGSize
 
     init(url: URL) async throws {
         let asset = AVURLAsset(url: url)
@@ -22,9 +23,15 @@ actor FrameExtractor {
             throw FrameExtractorError.noVideoTrack
         }
         let nominalFPS = try await track.load(.nominalFrameRate)
+        let naturalSize = try await track.load(.naturalSize)
+        let transform = try await track.load(.preferredTransform)
 
         self.fps = Double(nominalFPS)
         self.totalFrames = Int(CMTimeGetSeconds(duration) * Double(nominalFPS))
+
+        // transform適用後のサイズ（縦撮影では width < height）
+        let transformed = naturalSize.applying(transform)
+        self._videoSize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
 
         let gen = AVAssetImageGenerator(asset: asset)
         gen.appliesPreferredTrackTransform = true
@@ -35,6 +42,9 @@ actor FrameExtractor {
     }
 
     var frameCount: Int { totalFrames }
+
+    /// transform適用後の実動画サイズ
+    var videoSize: CGSize { _videoSize }
 
     func image(at frameIndex: Int) async throws -> UIImage {
         let time = CMTime(value: CMTimeValue(frameIndex),

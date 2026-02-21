@@ -91,7 +91,7 @@ struct ResultView: View {
         let stabilizer = VideoStabilizer()
         Task {
             do {
-                try await stabilizer.saveToPhotoLibrary(url: outputURL)
+                _ = try await stabilizer.saveToPhotoLibrary(url: outputURL)
                 await MainActor.run {
                     isSaving = false
                     saveResult = SaveResult(isSuccess: true, message: "カメラロールに保存しました ✓")

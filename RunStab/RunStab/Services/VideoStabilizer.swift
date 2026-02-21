@@ -111,8 +111,14 @@ actor VideoStabilizer {
                                   width: cropSize.width, height: cropSize.height)
 
             // Core Image でクロップ → 正規化 → スケール
+            // preferredTransform 適用後の CIImage は X 軸が表示座標と逆向きになるため、
+            // クロップ前に X 軸を反転して表示座標系に揃える
+            let xFlip = CGAffineTransform(scaleX: -1, y: 1)
+                .translatedBy(x: -srcWidth, y: 0)
+
             var ciImage = CIImage(cvPixelBuffer: pixelBuffer)
                 .transformed(by: transform)
+                .transformed(by: xFlip)
                 .cropped(to: cropRect)
                 .transformed(by: CGAffineTransform(translationX: -cropRect.origin.x,
                                                    y: -cropRect.origin.y))
@@ -120,6 +126,11 @@ actor VideoStabilizer {
             let scaleX = outputWidth  / cropSize.width
             let scaleY = outputHeight / cropSize.height
             ciImage = ciImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
+
+            // CIImage (左下原点) → CVPixelBuffer (左上原点) の座標系差分を補正（Y軸反転）
+            let correction = CGAffineTransform(scaleX: 1, y: -1)
+                .translatedBy(x: 0, y: -outputHeight)
+            ciImage = ciImage.transformed(by: correction)
 
             // 出力バッファに描画
             var outputBuffer: CVPixelBuffer?

@@ -20,9 +20,7 @@ struct TrackingSetupView: View {
 
     @State private var startPoint: FramePoint?
     @State private var endPoint: FramePoint?
-    @State private var runnerHeightPx: Double = 300
-    @State private var isMeasuringHeight = false
-    @State private var heightTopY: Double?
+    @State private var videoSize: CGSize = .zero
 
     @State private var phase: SetupPhase = .setStart
     @State private var errorMessage: String?
@@ -176,10 +174,12 @@ struct TrackingSetupView: View {
         let offsetX = (viewSize.width - scaledW) / 2
         let offsetY = (viewSize.height - scaledH) / 2
 
+        // 実動画座標 → プレビュー画像座標 → ビュー座標
+        let videoToPreview = videoSize.width > 0 ? imageSize.width / videoSize.width : 1.0
         func toView(_ p: FramePoint) -> CGPoint {
             CGPoint(
-                x: p.x * scale + offsetX,
-                y: p.y * scale + offsetY
+                x: p.x * videoToPreview * scale + offsetX,
+                y: p.y * videoToPreview * scale + offsetY
             )
         }
 
@@ -212,9 +212,11 @@ struct TrackingSetupView: View {
         do {
             let e = try await FrameExtractor(url: videoURL)
             let count = await e.frameCount
+            let vSize = await e.videoSize
             await MainActor.run {
                 self.extractor = e
                 self.totalFrames = max(count, 1)
+                self.videoSize = vSize
             }
             await loadCurrentFrame()
         } catch {
@@ -251,7 +253,10 @@ struct TrackingSetupView: View {
         guard imgX >= 0, imgX <= imageSize.width,
               imgY >= 0, imgY <= imageSize.height else { return }
 
-        let point = FramePoint(frame: currentFrame, x: imgX, y: imgY)
+        // プレビュー縮小画像座標 → 実動画座標にスケール変換
+        let scaleX = videoSize.width > 0 ? videoSize.width / imageSize.width : 1.0
+        let scaleY = videoSize.height > 0 ? videoSize.height / imageSize.height : 1.0
+        let point = FramePoint(frame: currentFrame, x: imgX * scaleX, y: imgY * scaleY)
 
         switch phase {
         case .setStart:
@@ -267,7 +272,7 @@ struct TrackingSetupView: View {
         let traj = Trajectory(
             startFrame: s.frame, startX: s.x, startY: s.y,
             endFrame:   e.frame, endX:   e.x, endY:   e.y,
-            runnerHeightPx: runnerHeightPx
+            sourceVideoHeight: videoSize.height
         )
         step = .processing(videoURL, traj)
     }

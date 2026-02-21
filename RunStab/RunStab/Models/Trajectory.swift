@@ -3,7 +3,7 @@
 //  RunStab
 //
 //  走者の追跡軌道。始点・終点のフレーム番号と座標から
-//  線形補間でX/Y座標を計算する。
+//  線形補間でX座標を計算する。Y座標は始点・終点の中央値で固定する。
 
 import CoreGraphics
 
@@ -14,12 +14,12 @@ struct Trajectory {
     let endFrame: Int
     let endX: Double
     let endY: Double
-    let runnerHeightPx: Double
+    let sourceVideoHeight: Double
 
     init(
         startFrame: Int, startX: Double, startY: Double,
         endFrame: Int, endX: Double, endY: Double,
-        runnerHeightPx: Double = 300
+        sourceVideoHeight: Double
     ) {
         self.startFrame = startFrame
         self.startX = startX
@@ -27,7 +27,7 @@ struct Trajectory {
         self.endFrame = endFrame
         self.endX = endX
         self.endY = endY
-        self.runnerHeightPx = runnerHeightPx
+        self.sourceVideoHeight = sourceVideoHeight
     }
 
     /// フレーム番号に対応するX座標（範囲外はクランプ）
@@ -35,14 +35,14 @@ struct Trajectory {
         interpolate(from: startX, to: endX, at: frame)
     }
 
-    /// フレーム番号に対応するY座標（範囲外はクランプ）
+    /// Y座標は始点・終点の中央値で固定する（prototypeに準拠）
     func y(at frame: Int) -> Double {
-        interpolate(from: startY, to: endY, at: frame)
+        (startY + endY) / 2
     }
 
-    /// 走者の高さをもとにした9:16のクロップサイズ
+    /// 実動画高さの35%を基準にした9:16のクロップサイズ（prototypeに準拠）
     var cropSize: CGSize {
-        let height = runnerHeightPx * 1.5
+        let height = sourceVideoHeight * 0.35
         let width = height * 9.0 / 16.0
         return CGSize(width: width, height: height)
     }
