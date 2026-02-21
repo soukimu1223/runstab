@@ -15,3 +15,15 @@ prototype/*_frames/
 # Python
 __pycache__/
 *.pyc
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+build/
